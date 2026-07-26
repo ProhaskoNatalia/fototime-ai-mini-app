@@ -5,6 +5,7 @@ const fsp = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
 const identityStore = require('../services/identityStore');
+const operationalStore = require('../services/operationalStore');
 const { fetchPublicStyles, generateImage } = require('../services/imageProviderService');
 
 const router = express.Router();
@@ -514,6 +515,18 @@ async function readStyles() {
 }
 
 async function getDb() {
+  if (operationalStore.enabled()) {
+    try {
+      const remote = await operationalStore.readJson('state/stable-db.json');
+      if (remote) {
+        repairDbUrls(remote);
+        if (await purgeExpiredData(remote)) await saveDb(remote);
+        return remote;
+      }
+    } catch (error) {
+      console.error('[FOT AI] persistent state read failed:', error.message);
+    }
+  }
   const db = await readJson('stable-db.json', null);
   if (db) {
     repairDbUrls(db);
@@ -555,6 +568,13 @@ async function saveDb(db) {
   repairDbUrls(db);
   db.updatedAt = nowIso();
   await writeJson('stable-db.json', db);
+  if (operationalStore.enabled()) {
+    try {
+      await operationalStore.writeJson('state/stable-db.json', db);
+    } catch (error) {
+      console.error('[FOT AI] persistent state write failed:', error.message);
+    }
+  }
 }
 
 function getOrCreateUser(db, input = {}) {
@@ -715,7 +735,16 @@ router.get('/file/:bucket/:name', async (req, res) => {
     const abs = path.join(baseDir, name);
 
     if (!fs.existsSync(abs)) {
-      return sendMissingImage(res, name);
+      try {
+        const stored = await operationalStore.download(`${bucket}/${name}`);
+        if (!stored) return sendMissingImage(res, name);
+        res.setHeader('Content-Type', stored.contentType);
+        res.setHeader('Cache-Control', 'private, max-age=300');
+        return res.send(stored.buffer);
+      } catch (error) {
+        console.error('[FOT AI] persistent media read failed:', error.message);
+        return sendMissingImage(res, name);
+      }
     }
 
     res.setHeader('Cache-Control', 'no-store');
@@ -1306,6 +1335,10 @@ router.post('/generate', upload.any(), requireIdentity, async (req, res) => {
     }
 
     await fsp.writeFile(resultAbs, resultBuffer);
+    await Promise.all([
+      operationalStore.upload(`uploads/${sourceName}`, source.buffer, source.mimetype || 'image/jpeg'),
+      operationalStore.upload(`results/${resultName}`, resultBuffer, 'image/png'),
+    ]);
 
     user.balance = Math.max(0, balance - BALANCE_COST);
     user.updatedAt = nowIso();
