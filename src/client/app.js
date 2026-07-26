@@ -1153,6 +1153,11 @@
           ${state.filePreview ? `<img src="${state.filePreview}" alt="Выбранное фото">` : '<span>Выбрать фото</span>'}
           <strong>${state.file ? esc(state.file.name) : 'Лучше загрузить портретное фото, где хорошо видно лицо'}</strong>
         </label>
+        <label class="ft-camera-button">
+          <input type="file" accept="image/*" capture="user" data-action="file-input">
+          <span aria-hidden="true">◎</span>
+          Сделать фото
+        </label>
 
         <button class="ft-generate" data-action="generate" type="button" ${canGenerate() ? '' : 'disabled'}>
           Создать AI-фото
