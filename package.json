@@ -1,6 +1,6 @@
 {
   "name": "fot-ai",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A multilingual event photo studio with secure accounts, generation history, and an operator console.",
   "main": "src/server/server.js",
   "scripts": {
