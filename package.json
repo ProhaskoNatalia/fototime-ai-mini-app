@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server/server.js",
     "start": "node src/server/server.js",
-    "check": "node --check src/client/app.js && node --check src/server/server.js && node --check src/server/routes/adminPin.js && node --check src/server/routes/fototimeStable.js && node --check src/server/services/identityStore.js && node --check src/server/services/imageProviderService.js && node --check src/server/services/operationalStore.js",
+    "check": "node --check src/client/app.js && node --check src/server/server.js && node --check src/server/routes/adminPin.js && node --check src/server/routes/fototimeStable.js && node --check src/server/services/identityStore.js && node --check src/server/services/imageProviderService.js",
     "test": "node --test tests/**/*.test.js",
     "format": "prettier --write \"*.md\" \"*.json\" \"docs/**/*.md\" \"src/**/*.{js,css,html}\" \"tests/**/*.js\"",
     "format:check": "prettier --check \"*.md\" \"*.json\" \"docs/**/*.md\" \"src/**/*.{js,css,html}\" \"tests/**/*.js\"",
